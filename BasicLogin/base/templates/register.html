@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Register</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+        }
+
+        main {
+            width: min(92%, 420px);
+            margin: 60px auto;
+            background: white;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px #0001;
+        }
+
+        label {
+            display: block;
+            margin: 14px 0 6px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 11px;
+            background: #2563eb;
+            color: white;
+            border: 0;
+            border-radius: 6px;
+        }
+
+        .error {
+            color: #b91c1c;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1 style="text-align: center;">Super Secret Website Registration</h1>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% for field in form %}
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% for error in field.errors %}
+                    <div class="error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            <button type="submit">
+                Register
+            </button>
+        </form>
+
+        <p>
+            Already registered?
+            <a href="{% url 'login' %}">
+                Login
+            </a>
+        </p>
+    </main>
+</body>
+</html>

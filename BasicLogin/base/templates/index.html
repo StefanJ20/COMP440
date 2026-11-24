@@ -1,0 +1,176 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barfsimmons</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: -100%;
+            z-index: -1;
+            background: conic-gradient(
+                red,
+                orange,
+                yellow,
+                lime,
+                cyan,
+                blue,
+                violet,
+                magenta,
+                red
+            );
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        body.rainbow-active::before {
+            opacity: 1;
+            animation: rotating-rainbow-background 10s linear infinite;
+        }
+
+        .image-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #barfsimmons-link {
+            display: block;
+        }
+
+        #barfsimmons-image {
+            display: block;
+            max-width: 80vw;
+            max-height: 80vh;
+            object-fit: contain;
+            cursor: pointer;
+        }
+
+        #barfsimmons-image.rainbow-active {
+            animation: rotating-rainbow-image 5s linear infinite;
+        }
+
+        @keyframes rotating-rainbow-background {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes rotating-rainbow-image {
+            from {
+                filter: hue-rotate(0deg);
+            }
+
+            to {
+                filter: hue-rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="image-container">
+        <a
+            id="barfsimmons-link"
+            href="{% url 'logout' %}"
+        >
+            <img
+                id="barfsimmons-image"
+                src="{% static 'images/barfsimmons.png' %}"
+                alt="Barfsimmons"
+            >
+        </a>
+    </main>
+
+    <audio
+        id="hover-audio"
+        loop
+        preload="auto"
+    >
+        <source
+            src="{% static 'audios/playground.mp3' %}"
+            type="audio/mpeg"
+        >
+    </audio>
+
+    <script>
+        const image = document.getElementById("barfsimmons-image");
+        const audio = document.getElementById("hover-audio");
+
+        let audioUnlocked = false;
+
+        document.addEventListener(
+            "pointerdown",
+            async () => {
+                try {
+                    await audio.play();
+                    audio.pause();
+
+                    audioUnlocked = true;
+
+                    if (image.matches(":hover")) {
+                        await audio.play();
+                    }
+                } catch (error) {
+                    console.warn(
+                        "Audio could not be unlocked:",
+                        error
+                    );
+                }
+            },
+            { once: true }
+        );
+
+        image.addEventListener("mouseenter", async () => {
+            document.body.classList.add("rainbow-active");
+            image.classList.add("rainbow-active");
+
+            if (audioUnlocked && audio.paused) {
+                try {
+                    await audio.play();
+                } catch (error) {
+                    console.warn(
+                        "Audio could not play:",
+                        error
+                    );
+                }
+            }
+        });
+
+        image.addEventListener("mouseleave", () => {
+            document.body.classList.remove("rainbow-active");
+            image.classList.remove("rainbow-active");
+
+            audio.pause();
+        });
+    </script>
+</body>
+</html>
