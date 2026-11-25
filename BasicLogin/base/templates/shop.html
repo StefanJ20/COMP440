@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>The Shop</h1>
+<form method="get" style="margin-bottom:14px">
+  <input name="category" placeholder="category, e.g. books" value="{{ cat }}">
+  <button>Search</button>
+  {% if cat %}<a class="btn" href="{% url 'shop' %}">Clear</a>{% endif %}
+  <a class="btn" href="{% url 'item_add' %}">+ Sell an item</a>
+</form>
+<div class="grid">
+  {% for item in items %}
+  <div class="card">
+    <h2><a href="{% url 'item_detail' item.pk %}">{{ item.title }}</a></h2>
+    <div class="price">${{ item.price }}</div>
+    <div>by {{ item.seller.username }} &middot; {{ item.date_posted }}</div>
+    <div>{% for c in item.categories.all %}<a class="tag" href="?category={{ c.name }}">{{ c.name }}</a>{% endfor %}</div>
+  </div>
+  {% empty %}
+  <p>Nothing here yet. Be the first to sell something!</p>
+  {% endfor %}
+</div>
+{% endblock %}
