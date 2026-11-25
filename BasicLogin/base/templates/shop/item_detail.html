@@ -1,0 +1,44 @@
+{% extends "shop/base.html" %}
+{% block wtitle %}item{{ item.pk }}{% endblock %}
+{% block content %}
+<h1>{{ item.title }}</h1>
+<div class="price">${{ item.price }}</div>
+<p>{{ item.description|linebreaksbr }}</p>
+<p>Seller: <b>{{ item.seller.username }}</b> &middot; Posted {{ item.date_posted }}</p>
+<p>{% for c in item.categories.all %}<a class="tag" href="{% url 'shop' %}?category={{ c.name }}">{{ c.name }}</a>{% endfor %}</p>
+
+{% if mine %}
+<div class="qbox">
+  <h2>Your item</h2>
+  <form method="post" action="{% url 'item_price' item.pk %}" style="display:inline">{% csrf_token %}
+    <input name="price" size="8" placeholder="new price"> <button>Update price</button>
+  </form>
+  <form method="post" action="{% url 'item_delete' item.pk %}" style="display:inline"
+        onsubmit="return confirm('Delete this item?')">{% csrf_token %}
+    <button class="danger">Delete item</button>
+  </form>
+  <form method="post" action="{% url 'item_categories' item.pk %}" style="margin-top:8px">{% csrf_token %}
+    <input name="categories" placeholder="category words">
+    <button name="action" value="add">Add category</button>
+    <button name="action" value="remove">Remove category</button>
+  </form>
+</div>
+{% endif %}
+
+<h2>Reviews</h2>
+{% for r in reviews %}
+  <div class="review"><b>{{ r.rating }}</b> &mdash; {{ r.comment }}<br>
+  <small>{{ r.reviewer.username }}, {{ r.review_date }}</small></div>
+{% empty %}<p>No reviews yet.</p>{% endfor %}
+
+{% if can_review %}
+<form method="post" action="{% url 'review_add' item.pk %}" class="qbox">{% csrf_token %}
+  <label>Rating</label>
+  <select name="rating">{% for r in ratings %}<option>{{ r }}</option>{% endfor %}</select>
+  <label>Comment (max 200 chars)</label>
+  <input name="comment" maxlength="200" size="50">
+  <p><button>Submit review</button> <small>Reviews can't be edited later.</small></p>
+</form>
+{% endif %}
+<p><a class="btn" href="{% url 'shop' %}">&larr; Back to shop</a></p>
+{% endblock %}

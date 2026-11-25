@@ -20,6 +20,11 @@ def _cats(text):
     return sorted(set(re.findall(r"[a-z]+", (text or "").lower())))
 
 
+def _db_reason(exc):
+    """Pull the readable message out of a trigger/constraint error."""
+    return str(exc.args[-1]) if exc.args else "The database rejected the request."
+
+
 def _price(text):
     try:
         p = Decimal((text or "").strip()).quantize(Decimal("0.01"))
@@ -51,10 +56,16 @@ def item_add(request):
         price = _price(f.get("price"))
         cats = _cats(f.get("categories"))
         today = timezone.localdate()
-        if not title or not desc or price is None or not cats:
-            messages.error(request, "Fill in every field (price >= 0, 1+ category).")
+        if not title:
+            messages.error(request, "Title is required.")
+        elif not desc:
+            messages.error(request, "Description is required.")
+        elif price is None:
+            messages.error(request, "Price must be a number from 0.00 to 99,999,999.99.")
+        elif not cats:
+            messages.error(request, "At least one category is required (lowercase letters only).")
         elif Item.objects.filter(seller=request.user, date_posted=today).count() >= 2:
-            messages.error(request, "You can only post 2 items per day.")
+            messages.error(request, "Daily limit reached: you may post at most 2 items per calendar day.")
         else:
             try:
                 with transaction.atomic():
@@ -67,9 +78,17 @@ def item_add(request):
                     )
                 messages.success(request, "Item posted!")
                 return redirect("item_detail", pk=item.pk)
-            except DatabaseError:
-                messages.error(request, "The database rejected that (daily limit?).")
-    return render(request, "shop/item_form.html", {"f": f})
+            except DatabaseError as e:
+                messages.error(request, f"Database rule violated: {_db_reason(e)}.")
+    my_items = (
+        Item.objects.filter(seller=request.user)
+        .prefetch_related("categories")
+        .order_by("-date_posted", "-id")
+    )
+    posted_today = my_items.filter(date_posted=timezone.localdate()).count()
+    return render(request, "shop/sell.html", {
+        "f": f, "my_items": my_items, "posted_today": posted_today,
+    })
 
 
 @login_req
@@ -96,11 +115,13 @@ def item_price(request, pk):
     item = _own_item(request, pk)
     price = _price(request.POST.get("price"))
     if price is None:
-        messages.error(request, "Enter a valid price.")
+        messages.error(request, "Price must be a number from 0.00 to 99,999,999.99.")
     else:
         item.price = price
         item.save(update_fields=["price"])
         messages.success(request, "Price updated.")
+    if request.POST.get("next") == "sell":
+        return redirect("item_add")
     return redirect("item_detail", pk=pk)
 
 
@@ -109,6 +130,8 @@ def item_price(request, pk):
 def item_delete(request, pk):
     _own_item(request, pk).delete()
     messages.success(request, "Item deleted.")
+    if request.POST.get("next") == "sell":
+        return redirect("item_add")
     return redirect("shop")
 
 
@@ -122,7 +145,7 @@ def item_categories(request, pk):
     else:
         remaining = item.categories.exclude(name__in=names).count()
         if remaining == 0:
-            messages.error(request, "An item must keep at least one category.")
+            messages.error(request, "Cannot remove the last category: an item must belong to at least one.")
         else:
             item.categories.remove(*item.categories.filter(name__in=names))
     return redirect("item_detail", pk=pk)
@@ -137,21 +160,23 @@ def review_add(request, pk):
     comment = request.POST.get("comment", "").strip()[:200]
     today = timezone.localdate()
     if item.seller_id == request.user.id:
-        messages.error(request, "You can't review your own item.")
-    elif rating not in RATINGS or not comment:
-        messages.error(request, "Pick a rating and write a comment.")
+        messages.error(request, "Rule violated: you cannot review your own item.")
+    elif rating not in RATINGS:
+        messages.error(request, "Rating must be Excellent, Good, Fair, or Poor.")
+    elif not comment:
+        messages.error(request, "A comment is required.")
     elif Review.objects.filter(item=item, reviewer=request.user).exists():
-        messages.error(request, "You already reviewed this item.")
+        messages.error(request, "Rule violated: you have already reviewed this item (one review per item).")
     elif Review.objects.filter(reviewer=request.user, review_date=today).count() >= 2:
-        messages.error(request, "You can only submit 2 reviews per day.")
+        messages.error(request, "Daily limit reached: you may submit at most 2 reviews per calendar day.")
     else:
         try:
             with transaction.atomic():
                 Review.objects.create(item=item, reviewer=request.user,
                                       rating=rating, comment=comment, review_date=today)
             messages.success(request, "Review submitted.")
-        except DatabaseError:
-            messages.error(request, "The database rejected that review.")
+        except DatabaseError as e:
+            messages.error(request, f"Database rule violated: {_db_reason(e)}.")
     return redirect("item_detail", pk=pk)
 
 
@@ -228,5 +253,5 @@ def queries(request):
                 result = {"title": title, "cols": [c[0] for c in cur.description],
                           "rows": cur.fetchall()}
         else:
-            messages.error(request, "Please fill in the input(s) for that query.")
+            messages.error(request, "Missing input: fill in every field for that query before running it.")
     return render(request, "shop/queries.html", {"result": result, "qs": qs})

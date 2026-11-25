@@ -52,11 +52,14 @@ a { color: #0000c0; }
   background: #ffd800; font-size: 11px; text-decoration: none; color: #000;
 }
 .btn, button {
-  display: inline-block; padding: 4px 14px; background: #c0c0c0; color: #000; cursor: pointer;
-  font: 13px Tahoma, Arial, sans-serif; text-decoration: none;
-  border: 2px solid; border-color: #fff #404040 #404040 #fff;
+  display: inline-block; min-width: 75px; padding: 3px 12px; text-align: center; cursor: pointer;
+  font: 11px Tahoma, Verdana, sans-serif; color: #000; text-decoration: none;
+  border: 1px solid #003c74; border-radius: 3px;
+  background: linear-gradient(#fff, #ece9d8 85%, #d6d0c5);
 }
-.btn:active, button:active { border-color: #404040 #fff #fff #404040; }
+.btn:hover, button:hover { box-shadow: inset 0 0 0 2px #f8b330; }
+.btn:active, button:active { background: #d6d0c5; box-shadow: none; }
+.btn:focus, button:focus { outline: 1px dotted #000; outline-offset: -4px; box-shadow: inset 0 0 0 2px #7ab0f5; }
 .danger { color: #c00000; font-weight: bold; }
 input, textarea, select {
   font: 13px Tahoma, Arial, sans-serif; padding: 3px; background: #fff;
@@ -84,5 +87,92 @@ th { background: #000080; color: #fff; }
 }
 .shopbtn {
   font-size: 22px; font-family: "Comic Sans MS", cursive; padding: 10px 28px;
-  background: #ffd800; border-color: #fff #000 #000 #fff;
+  background: linear-gradient(#fff6a8, #ffd800 85%, #e0b800);
+}
+
+/* ---------- Windows XP crash dialog ---------- */
+.xp-overlay {
+  position: fixed; inset: 0; z-index: 1000; display: flex;
+  align-items: center; justify-content: center; background: rgba(0, 0, 0, .35);
+}
+.xp-dialog {
+  width: min(470px, 92vw); background: #ece9d8; color: #000;
+  font: 11px Tahoma, Verdana, sans-serif;
+  border: 3px solid #0054e3; border-top: 0; border-radius: 8px 8px 0 0;
+  box-shadow: 2px 3px 10px rgba(0, 0, 0, .6);
+}
+.xp-title {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 3px 5px 3px 8px; border-radius: 7px 7px 0 0; color: #fff;
+  font: bold 13px Trebuchet MS, Tahoma, sans-serif; text-shadow: 1px 1px #0f1089;
+  background: linear-gradient(#0997ff, #0053ee 8%, #0050ee 40%, #0066ff 88%, #005bff 93%, #003dd7 95%, #003dd7);
+}
+.xp-close {
+  width: 21px; height: 21px; line-height: 19px; text-align: center; cursor: pointer;
+  font: bold 12px Tahoma, sans-serif; border: 1px solid #fff; border-radius: 3px;
+  background: radial-gradient(circle at 30% 30%, #e8805f, #c1371a);
+}
+.xp-body { display: flex; gap: 14px; padding: 16px 16px 8px; }
+.xp-body p { margin: 0 0 8px; font-size: 12px; }
+.xp-icon {
+  flex: none; width: 34px; height: 34px; border-radius: 50%; text-align: center;
+  font: bold 22px/32px Tahoma, sans-serif; color: #fff; border: 2px solid #fff;
+  background: radial-gradient(circle at 35% 30%, #ff8a70, #d4260d 70%);
+  box-shadow: 0 0 0 1px #a31a06, 1px 2px 3px rgba(0, 0, 0, .5);
+}
+.xp-reason {
+  background: #fff; border: 1px solid #7f9db9; padding: 6px 8px; font-size: 12px;
+  color: #a00000; font-weight: bold;
+}
+.xp-buttons { display: flex; justify-content: flex-end; gap: 6px; padding: 10px 16px 14px; }
+.xp-dialog button {
+  min-width: 75px; padding: 3px 12px; font: 11px Tahoma, Verdana, sans-serif; cursor: pointer;
+  border: 1px solid #003c74; border-radius: 3px; color: #000;
+  background: linear-gradient(#fff, #ece9d8 85%, #d6d0c5);
+}
+.xp-dialog button:hover { box-shadow: inset 0 0 0 2px #f8b330; }
+.xp-dialog button:active { background: #d6d0c5; box-shadow: none; }
+.xp-dialog button:focus { outline: 1px dotted #000; outline-offset: -4px; box-shadow: inset 0 0 0 2px #7ab0f5; }
+
+/* ---------- Paint tools ---------- */
+#paintLayer { position: absolute; left: 0; top: 0; z-index: 50; pointer-events: none; touch-action: none; }
+.menubar, .toolbox, .palette, .status { position: relative; z-index: 60; }
+
+.toolbox button.t {
+  min-width: 0; width: 100%; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; border: 2px solid; border-color: #fff #404040 #404040 #fff; border-radius: 0;
+  background: #c0c0c0; box-shadow: none; cursor: pointer;
+}
+.toolbox button.t:hover { background: #d4d0c8; box-shadow: none; }
+.toolbox button.t:focus { outline: 1px dotted #000; outline-offset: -4px; box-shadow: none; }
+.toolbox button.t.on, .toolbox button.t:active {
+  border-color: #404040 #fff #fff #404040;
+  background: repeating-conic-gradient(#fff 0 25%, #c0c0c0 0 50%) 0 0 / 2px 2px;
+}
+
+.palette { align-items: center; gap: 8px; }
+.palette .cur {
+  width: 32px; height: 32px; flex: none; background: #000;
+  border: 2px solid; border-color: #404040 #fff #fff #404040;
+}
+.palette .swatches { display: flex; flex-wrap: wrap; max-width: 330px; }
+.palette i { cursor: pointer; }
+.palette i.sel { box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px #000; }
+
+.status { gap: 14px; flex-wrap: wrap; align-items: center; }
+.status .ctl { display: inline-flex; align-items: center; gap: 4px; }
+.status input[type=range] { width: 110px; padding: 0; border: 0; background: none; }
+.status output { min-width: 34px; }
+
+#lens { position: fixed; width: 320px; height: 320px; z-index: 900; pointer-events: none; display: none; }
+#lensView {
+  position: absolute; left: 22px; top: 22px; width: 176px; height: 176px;
+  border-radius: 50%; overflow: hidden; background: #fff;
+}
+#lensWorld { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+#lensCanvas { position: absolute; left: 0; top: 0; }
+#lens img { position: absolute; left: 0; top: 0; width: 320px; height: 320px; }
+#eraserRing {
+  position: fixed; z-index: 900; pointer-events: none; display: none; border-radius: 50%;
+  border: 1px solid #000; box-shadow: 0 0 0 1px #fff; transform: translate(-50%, -50%);
 }

@@ -1,0 +1,118 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Shop{% endblock %} - Paint</title>
+  <link rel="stylesheet" href="{% static 'paint.css' %}">
+  <script src="{% static 'paint.js' %}" defer></script>
+</head>
+<body>
+<canvas id="paintLayer" data-nozoom></canvas>
+<div class="window">
+  <div class="titlebar">
+    <span>🎨 {% block wtitle %}shop{% endblock %}.bmp - Paint</span>
+    <span class="winbtns"><b>_</b><b>□</b><b>×</b></span>
+  </div>
+  <div class="menubar">
+    <a href="{% url 'index' %}">Home</a>
+    <a href="{% url 'shop' %}">Shop</a>
+    <a href="{% url 'item_add' %}">Sell</a>
+    <a href="{% url 'queries' %}">Queries</a>
+    <a href="{% url 'logout' %}">Exit</a>
+  </div>
+  <div class="body">
+    <div class="toolbox" id="toolbox">
+      <button type="button" class="t" data-tool="pencil" title="Pencil" aria-pressed="false">✏️</button>
+      <button type="button" class="t" data-tool="pen" title="Pen" aria-pressed="false">🖌️</button>
+      <button type="button" class="t" data-tool="bucket" title="Fill With Color" aria-pressed="false">🪣</button>
+      <button type="button" class="t" data-tool="magnifier" title="Magnifier" aria-pressed="false">🔍</button>
+      <button type="button" class="t" data-tool="eraser" title="Eraser" aria-pressed="false">
+        <svg width="24" height="20" viewBox="0 0 24 20" aria-hidden="true"><g transform="rotate(-35 12 10)"><rect x="3" y="5" width="18" height="10" rx="2" fill="#f2a0b4" stroke="#000"/><rect x="3" y="5" width="7" height="10" rx="2" fill="#4a7bd0" stroke="#000"/></g></svg>
+      </button>
+      <button type="button" class="t" id="trash" title="Delete everything drawn">🗑️</button>
+    </div>
+    <div class="canvas-wrap">
+      <div class="canvas">
+        {% for m in messages %}
+          {% if m.level_tag == 'error' %}
+          <div class="xp-overlay" role="alertdialog" aria-modal="true" aria-label="Marketplace error">
+            <div class="xp-dialog">
+              <div class="xp-title">
+                <span>Marketplace</span>
+                <span class="xp-close" title="Close" onclick="this.closest('.xp-overlay').remove()">&#10005;</span>
+              </div>
+              <div class="xp-body">
+                <div class="xp-icon">&#10005;</div>
+                <div>
+                  <p>Marketplace has encountered a problem and needs to close. We are sorry for the inconvenience.</p>
+                  <p><b>Reason:</b></p>
+                  <div class="xp-reason">{{ m }}</div>
+                </div>
+              </div>
+              <div class="xp-buttons">
+                <button type="button" autofocus onclick="this.closest('.xp-overlay').remove()">Send Error Report</button>
+                <button type="button" onclick="this.closest('.xp-overlay').remove()">Don't Send</button>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="msg {{ m.tags }}">{{ m }}</div>
+          {% endif %}
+        {% endfor %}
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+  <div class="palette">
+    <span class="cur" id="curColor" title="Current color"></span>
+    <div class="swatches">
+      <i data-c="#000000" class="sel" style="background:#000000" title="Black"></i><i data-c="#808080" style="background:#808080"></i><i data-c="#800000" style="background:#800000"></i><i data-c="#808000" style="background:#808000"></i><i data-c="#008000" style="background:#008000"></i><i data-c="#008080" style="background:#008080"></i><i data-c="#000080" style="background:#000080"></i><i data-c="#800080" style="background:#800080"></i>
+      <i data-c="#ffffff" style="background:#ffffff" title="White"></i><i data-c="#c0c0c0" style="background:#c0c0c0"></i><i data-c="#ff0000" style="background:#ff0000"></i><i data-c="#ffff00" style="background:#ffff00"></i><i data-c="#00ff00" style="background:#00ff00"></i><i data-c="#00ffff" style="background:#00ffff"></i><i data-c="#0000ff" style="background:#0000ff"></i><i data-c="#ff00ff" style="background:#ff00ff"></i>
+    </div>
+  </div>
+  <div class="status">
+    <span id="toolName">Tool: none</span>
+    <span class="ctl">Eraser radius <input type="range" id="eraseSize" min="5" max="80" value="20"> <output id="eraseVal">20px</output></span>
+    <span class="ctl">Zoom <input type="range" id="zoom" min="1.5" max="8" step="0.5" value="2"> <output id="zoomVal">2.0x</output></span>
+    <span>Logged in as {{ request.user.username }}</span>
+  </div>
+</div>
+
+<div id="lens" data-nozoom aria-hidden="true">
+  <div id="lensView"><div id="lensWorld"></div><canvas id="lensCanvas" width="176" height="176"></canvas></div>
+  <img src="{% static 'magnifier.png' %}" alt="">
+</div>
+<div id="eraserRing" data-nozoom></div>
+
+<script>
+/* XP-style confirmation box. xpConfirm(message, onYes) -- also used by <form data-confirm="..."> */
+window.xpConfirm = function (msg, onYes) {
+  var o = document.createElement('div');
+  o.className = 'xp-overlay';
+  o.setAttribute('role', 'alertdialog');
+  o.innerHTML =
+    '<div class="xp-dialog">' +
+      '<div class="xp-title"><span>Marketplace</span><span class="xp-close" data-no>&#10005;</span></div>' +
+      '<div class="xp-body"><div class="xp-icon">&#10005;</div>' +
+        '<div><p>Marketplace needs your confirmation before continuing.</p>' +
+        '<p><b>Are you sure?</b></p><div class="xp-reason"></div></div></div>' +
+      '<div class="xp-buttons"><button type="button" data-yes autofocus>Yes</button>' +
+      '<button type="button" data-no>No</button></div>' +
+    '</div>';
+  o.querySelector('.xp-reason').textContent = msg;
+  o.addEventListener('click', function (ev) {
+    if (ev.target.closest('[data-yes]')) { o.remove(); onYes(); }
+    else if (ev.target.closest('[data-no]')) { o.remove(); }
+  });
+  document.body.appendChild(o);
+  o.querySelector('[data-yes]').focus();
+};
+document.addEventListener('submit', function (e) {
+  var form = e.target, msg = form.dataset.confirm;
+  if (!msg) return;
+  e.preventDefault();
+  window.xpConfirm(msg, function () { form.removeAttribute('data-confirm'); form.submit(); });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{% extends "shop/base.html" %}
+{% block title %}Sell{% endblock %}
+{% block wtitle %}sell{% endblock %}
+{% block content %}
+<h1>Sell an Item</h1>
+
+<form method="post" class="qbox">{% csrf_token %}
+  <h2>New item</h2>
+
+  <label>Item ID</label>
+  <input value="assigned automatically" disabled size="22">
+
+  <label>Seller</label>
+  <input value="{{ request.user.username }}" disabled size="22">
+
+  <label>Date posted</label>
+  <input value="{% now 'Y-m-d' %}" disabled size="12">
+
+  <label for="title">Title</label>
+  <input id="title" name="title" maxlength="100" size="40" value="{{ f.title }}" required>
+
+  <label for="description">Description</label>
+  <textarea id="description" name="description" rows="4" required>{{ f.description }}</textarea>
+
+  <label for="price">Price ($)</label>
+  <input id="price" name="price" size="10" inputmode="decimal" placeholder="0.00" value="{{ f.price }}" required>
+
+  <label for="categories">Categories (one or more lowercase words, separated by spaces or commas)</label>
+  <input id="categories" name="categories" size="40" placeholder="electronics gaming" value="{{ f.categories }}" required>
+
+  <p>
+    <button>Post item</button>
+    <a class="btn" href="{% url 'shop' %}">Cancel</a>
+  </p>
+  <small>You have posted <b>{{ posted_today }}</b> of 2 items today.</small>
+</form>
+
+<h2>My items</h2>
+{% if my_items %}
+<table>
+  <tr><th>ID</th><th>Title</th><th>Price</th><th>Posted</th><th>Categories</th><th>Update price</th><th></th></tr>
+  {% for item in my_items %}
+  <tr>
+    <td>{{ item.pk }}</td>
+    <td><a href="{% url 'item_detail' item.pk %}">{{ item.title }}</a></td>
+    <td>${{ item.price }}</td>
+    <td>{{ item.date_posted }}</td>
+    <td>{% for c in item.categories.all %}<span class="tag">{{ c.name }}</span>{% endfor %}</td>
+    <td>
+      <form method="post" action="{% url 'item_price' item.pk %}" style="display:inline">{% csrf_token %}
+        <input type="hidden" name="next" value="sell">
+        <input name="price" size="8" inputmode="decimal" placeholder="new price">
+        <button>Update</button>
+      </form>
+    </td>
+    <td>
+      <form method="post" action="{% url 'item_delete' item.pk %}" style="display:inline"
+            onsubmit="return confirm('Delete this item?')">{% csrf_token %}
+        <input type="hidden" name="next" value="sell">
+        <button class="danger">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>You haven't posted anything yet.</p>
+{% endif %}
+{% endblock %}
